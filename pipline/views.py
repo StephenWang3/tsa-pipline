@@ -10,14 +10,40 @@ from django.views.decorators.http import require_http_methods
 
 from .forms import FileUploadForm
 
+trim_24_jf_path = '/data3/huomiaozhe/tsa_data/trim.24.jf-input'
+spe_assembly_fasta_path = '/data3/huomiaozhe/tsa_data/spe-assembly.fasta-input'
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def test(request):
-    df = pd.read_csv('/Users/steph/PycharmProjects/djangoProject/data/output/HGSC3.control.jf.csv', delimiter='\t')
-    # 将 DataFrame 转换为 JSON 字符串
-    json_data = df.to_json(orient='records')
-    return JsonResponse({'status': 'success', 'result': json_data})
+    return JsonResponse({'status': 'success', 'result': 'hello, world'})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def get_result(request):
+    form = FileUploadForm(request.POST, request.FILES)
+    if form.is_valid():
+        uploaded_file = request.FILES['file']
+        pattern = re.compile(r'^(.+?)-(.+)\.txt$')
+        match = pattern.match(uploaded_file.name)
+        if not match:
+            return HttpResponse("File name format invalid", status=400)
+
+        sample = match.group(1)
+        mutation_type = match.group(2)
+
+        current_path = os.getcwd()
+        data_path = os.path.join(current_path, 'data')
+
+        output_file = os.path.join(data_path, 'output', mutation_type, f'{sample}.control.jf.csv')
+        df = pd.read_csv(output_file, delimiter='\t')
+        json_data = df.to_json(orient='records')
+        return JsonResponse({'status': 'success', 'result': json_data})
+    else:
+        return JsonResponse({'status': 'error', 'errors': form.errors})
+
+
 
 
 @csrf_exempt
@@ -28,11 +54,6 @@ def process_file(request):
         print('form.is_valid')
         # 处理文件
         uploaded_file = request.FILES['file']
-
-        # 打印文件的一些基本属性
-        print('File name:', uploaded_file.name)  # 文件原始名称
-        print('File size:', uploaded_file.size)  # 文件大小（字节）
-        print('Content type:', uploaded_file.content_type)  # 文件的 MIME 类型
 
         result = handle_uploaded_file(uploaded_file)
 
@@ -135,10 +156,10 @@ def run_control_jf_spe(sample, script_path, data_path):
     cmd = [
         'python', f'{script_path}/control.jf.spe.py',
         f'{data_path}/resources/control-fasta-csv/{sample}.control.fasta.csv',
-        f'{data_path}/resources/control.trim.24.jf',
-        f'{data_path}/resources/trim-24-jf/{sample}.trim.24.jf',
-        f'{data_path}/output/{sample}.control.jf.csv',
-        f'{data_path}/resources/assembly-fasta/{sample}.assembly.fasta'
+        f'{trim_24_jf_path}/control.trim.24.jf',
+        f'{trim_24_jf_path}/{sample}.trim.24.jf',
+        f'{data_path}/output/spe/{sample}.control.jf.csv',
+        f'{spe_assembly_fasta_path}/{sample}.assembly.fasta'
     ]
     subprocess.run(cmd)
 
@@ -147,8 +168,8 @@ def run_control_jf_edit(sample, script_path, data_path):
     cmd = [
         'python', f'{script_path}/control.jf.edit-snp-indel.py',
         f'{data_path}/resources/control-fasta-csv/{sample}.control.fasta.csv',
-        f'{data_path}/resources/control.trim.24.jf',
-        f'{data_path}/resources/trim-24-jf/{sample}.trim.24.jf',
+        f'{trim_24_jf_path}/control.trim.24.jf',
+        f'{trim_24_jf_path}/{sample}.trim.24.jf',
         f'{data_path}/output/{sample}.control.jf.csv',
         f'{data_path}/resources/assembly-fasta/{sample}.candidate.contig.fasta'
     ]
@@ -159,8 +180,8 @@ def run_control_jf_snp(sample, script_path, data_path):
     cmd = [
         'python', f'{script_path}/control.jf.edit-snp-indel.py',
         f'{data_path}/resources/control-fasta-csv/{sample}.control.fasta.csv',
-        f'{data_path}/resources/control.trim.24.jf',
-        f'{data_path}/resources/trim-24-jf/{sample}.trim.24.jf',
+        f'{trim_24_jf_path}/control.trim.24.jf',
+        f'{trim_24_jf_path}/{sample}.trim.24.jf',
         f'{data_path}/output/{sample}.control.jf.csv',
         f'{data_path}/resources/assembly-fasta/{sample}.indel.contig.fasta'
     ]
@@ -171,8 +192,8 @@ def run_control_jf_indel(sample, script_path, data_path):
     cmd = [
         'python', f'{script_path}/control.jf.edit-snp-indel.py',
         f'{data_path}/resources/control-fasta-csv/{sample}.control.fasta.csv',
-        f'{data_path}/resources/control.trim.24.jf',
-        f'{data_path}/resources/trim-24-jf/{sample}.trim.24.jf',
+        f'{trim_24_jf_path}/control.trim.24.jf',
+        f'{trim_24_jf_path}/{sample}.trim.24.jf',
         f'{data_path}/output/{sample}.control.jf.csv',
         f'{data_path}/resources/assembly-fasta/{sample}.snp.contig.fasta'
     ]
@@ -183,8 +204,8 @@ def run_control_jf_fusion(sample, script_path, data_path):
     cmd = [
         'python', f'{script_path}/control.jf.fusion.py',
         f'{data_path}/resources/control-fasta-csv/{sample}.control.fasta.csv',
-        f'{data_path}/resources/control.trim.24.jf',
-        f'{data_path}/resources/trim-24-jf/{sample}.trim.24.jf',
+        f'{trim_24_jf_path}/control.trim.24.jf',
+        f'{trim_24_jf_path}/{sample}.trim.24.jf',
         f'{data_path}/output/{sample}.control.jf.csv',
         f'{data_path}/resources/assembly-fasta/{sample}.finspector.fa'
     ]
@@ -195,8 +216,8 @@ def run_control_jf_AS(sample, script_path, data_path):
     cmd = [
         'python', f'{script_path}/control.jf.AS.py',
         f'{data_path}/resources/control-fasta-csv/{sample}.control.fasta.csv',
-        f'{data_path}/resources/control.trim.24.jf',
-        f'{data_path}/resources/trim-24-jf/{sample}.trim.24.jf',
+        f'{trim_24_jf_path}/control.trim.24.jf',
+        f'{trim_24_jf_path}/{sample}.trim.24.jf',
         f'{data_path}/output/{sample}.control.jf-3.csv',
         f'{data_path}/resources/assembly-fasta/{sample}.bam'
     ]

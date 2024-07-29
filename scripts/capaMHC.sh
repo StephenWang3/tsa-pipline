@@ -26,19 +26,19 @@ rm ${data_dir}/temp/${sample}.${mutation_type}.MAPS-1.fasta ${data_dir}/temp/${s
 echo "${scripts_dir}/length.py"
 python ${scripts_dir}/length.py ${data_dir}/upload/${MS_filter_file}  ${data_dir}/temp/${sample}.${mutation_type}-1.csv
 cat   ${data_dir}/temp/${sample}.${mutation_type}-1.csv |awk '!a[$4]++{print}'> ${data_dir}/temp/${sample}.${mutation_type}.csv
-#rm ${data_dir}/temp/${sample}.${mutation_type}-1.csv
+rm ${data_dir}/temp/${sample}.${mutation_type}-1.csv
 echo $(date) ${sample}.${mutation_type}.csv finished ...
 
 ## 切换到输出目录
 #cd $outdir
 #
 # HLA 预测处理
-#for hla in `cat $hlaI`
-#do
-#    netMHCpan-4.0/netMHCpan -a $hla -p -inptype 1 -l 8,9,10,11 -s -f $data_dir/upload/${sample}-${mutation_type}.MAPS.fasta  -BA > $data_dir/temp/${sample}.$hla.binding.xls
-#done
-#echo $(date) ${sample}.MHCI.$hla.binding.xls  finished ...
-#
+for hla in `cat $hlaI`
+do
+    /data3/wangzezhou/TSA-input-output-file/netMHCpan/netMHCpan-4.1/netMHCpan -a $hla -p -inptype 1 -l 8,9,10,11 -s -f $data_dir/upload/${sample}-${mutation_type}.MAPS.fasta  -BA > $data_dir/temp/${sample}.$hla.binding.xls
+done
+echo $(date) ${sample}.MHCI.$hla.binding.xls  finished ...
+
 ## 生成 HLA 绑定文件的列表
 ls $data_dir/temp/${sample}.*.binding.xls > $data_dir/temp/${sample}.MHCI.binding.list
 
